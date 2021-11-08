@@ -1,0 +1,98 @@
+import:../std.stacksy
+
+; parameters: n str
+#printn
+	while copy:1 0 > do
+		copy print
+		swap 1 -
+		swap
+	elihw
+	
+	pop pop
+#
+
+#square
+    0 while copy:1 copy:1 > do
+		"#" print
+		1 +	
+	elihw
+	pop 2 - 0
+	
+	while copy:1 copy:1 > do
+		"\n#" print
+		copy:1 " " printn
+		"#" print
+		1 +	
+	elihw
+	
+	"\n" print
+	pop 2 + 0
+	while copy:1 copy:1 > do
+		"#" print
+		1 +	
+	elihw
+	
+	"\n" print
+	
+	pop pop
+#
+
+#diamond
+	copy
+	while copy do
+		1 -
+		copy " " printn
+		"#" print
+
+		copy:1 1 - copy:1 - 2 * copy if 
+			1 - " " printn
+			"#" print
+		else
+			pop
+		fi
+		
+		"\n" print
+		
+	elihw
+	
+	while 1 + copy copy:2 < do
+		copy " " printn
+		"#" print
+
+		copy:1 1 - copy:1 - 2 * copy if
+			1 - " " printn
+			"#" print
+		else
+			pop
+		fi
+		"\n" print
+	elihw
+	
+	pop pop
+	
+#
+
+#circle
+	copy -1 * copy while copy:1 copy:3 <= do
+		while copy copy:3 <= do
+			copy:1:2 * copy:1:2 * + copy:3:2 * > if
+				" " print
+			else
+				"#" print
+			fi
+			1 +
+		elihw
+		"\n" print
+		pop 1 + copy:1 -1 *
+	elihw
+	
+	pop pop pop
+#
+
+#entry
+	20 square
+	
+	20 diamond
+	
+	20 circle
+#

@@ -1,0 +1,7 @@
+import:std.stacksy
+
+
+
+#entry
+	1 printint
+#
