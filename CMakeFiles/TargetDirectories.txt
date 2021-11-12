@@ -1,0 +1,4 @@
+/home/sindre/stacksy/CMakeFiles/rebuild_cache.dir
+/home/sindre/stacksy/CMakeFiles/edit_cache.dir
+/home/sindre/stacksy/CMakeFiles/libelfin-fbreg.dir
+/home/sindre/stacksy/CMakeFiles/debugger.dir

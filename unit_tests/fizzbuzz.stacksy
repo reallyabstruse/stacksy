@@ -1,0 +1,24 @@
+import:../std.stacksy
+
+
+
+#entry
+	1 while copy 100 < do
+		copy 15 % 0 = if
+			"FizzBuzz\n" print
+		else
+			copy 3 % 0 = if
+				"Fizz\n" print
+
+			else
+				copy 5 % 0 = if
+					"Buzz\n" print
+				else
+					copy printint "\n" print
+				fi
+			fi
+		fi
+		
+		1 +
+	elihw
+#

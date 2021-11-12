@@ -1,0 +1,55 @@
+@temp:100
+
+#to_string
+    0 swap @temp_end 1 -
+	copy:1 0 < if
+		1 swap:3 pop
+		swap -1 * swap
+	fi
+    while
+        copy swap:2 10 divmod
+        '0' +
+        swap:2:1
+        setbyte
+        copy
+        0 != do
+            swap 1 -
+    elihw
+    
+    pop
+	swap 1 = if
+		1 - copy '-' setbyte
+	fi
+	
+	copy 8 - copy swap:2
+	
+	@temp_end swap -
+	set:8
+	
+#
+
+#clear
+	"\033[H\033[J" print
+#
+
+#print
+	copy get:8 swap 8 +
+    1 1 syscall:3
+#
+
+#printint
+    to_string print
+#
+
+#getbyte
+	get:1
+#
+
+#setbyte
+	set:1
+#
+
+#readbyte
+	1 @temp 1 0 syscall:3
+	@temp getbyte
+#

@@ -1,0 +1,14 @@
+import:../std.stacksy
+
+#pp
+	copy printint " " print
+#
+
+#entry
+    123456 234567 + pp
+	4321 * pp
+	953 / pp
+	copy:0:2 2 * pp - pp 
+	-1 * pp = pp
+	
+#

@@ -1,0 +1,10 @@
+import:std.stacksy
+
+
+
+#entry
+	1337 printint
+	1337 printint
+	1337 printint
+	1337 printint
+#
