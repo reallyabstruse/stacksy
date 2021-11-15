@@ -102,12 +102,12 @@ CMakeFiles/libelfin-fbreg.dir/clean:
 CMakeFiles/debugger.dir/all: CMakeFiles/libelfin-fbreg.dir/all
 	$(MAKE) -f CMakeFiles/debugger.dir/build.make CMakeFiles/debugger.dir/depend
 	$(MAKE) -f CMakeFiles/debugger.dir/build.make CMakeFiles/debugger.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/sindre/stacksy/CMakeFiles --progress-num=1,2,3 "Built target debugger"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/sindre/stacksy/CMakeFiles --progress-num=1,2 "Built target debugger"
 .PHONY : CMakeFiles/debugger.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/debugger.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/sindre/stacksy/CMakeFiles 3
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/sindre/stacksy/CMakeFiles 2
 	$(MAKE) -f CMakeFiles/Makefile2 CMakeFiles/debugger.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/sindre/stacksy/CMakeFiles 0
 .PHONY : CMakeFiles/debugger.dir/rule

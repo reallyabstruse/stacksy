@@ -163,33 +163,6 @@ debugger.cpp.s:
 	$(MAKE) -f CMakeFiles/debugger.dir/build.make CMakeFiles/debugger.dir/debugger.cpp.s
 .PHONY : debugger.cpp.s
 
-linenoise/linenoise.o: linenoise/linenoise.c.o
-
-.PHONY : linenoise/linenoise.o
-
-# target to build an object file
-linenoise/linenoise.c.o:
-	$(MAKE) -f CMakeFiles/debugger.dir/build.make CMakeFiles/debugger.dir/linenoise/linenoise.c.o
-.PHONY : linenoise/linenoise.c.o
-
-linenoise/linenoise.i: linenoise/linenoise.c.i
-
-.PHONY : linenoise/linenoise.i
-
-# target to preprocess a source file
-linenoise/linenoise.c.i:
-	$(MAKE) -f CMakeFiles/debugger.dir/build.make CMakeFiles/debugger.dir/linenoise/linenoise.c.i
-.PHONY : linenoise/linenoise.c.i
-
-linenoise/linenoise.s: linenoise/linenoise.c.s
-
-.PHONY : linenoise/linenoise.s
-
-# target to generate assembly for a file
-linenoise/linenoise.c.s:
-	$(MAKE) -f CMakeFiles/debugger.dir/build.make CMakeFiles/debugger.dir/linenoise/linenoise.c.s
-.PHONY : linenoise/linenoise.c.s
-
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -203,9 +176,6 @@ help:
 	@echo "... debugger.o"
 	@echo "... debugger.i"
 	@echo "... debugger.s"
-	@echo "... linenoise/linenoise.o"
-	@echo "... linenoise/linenoise.i"
-	@echo "... linenoise/linenoise.s"
 .PHONY : help
 
 

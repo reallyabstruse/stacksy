@@ -60,7 +60,7 @@ class PtrX64():
     def getGASFormat(self):
         if self.offset is None:
             return f"({self.var.getGASFormat()})"
-        return f"({self.var.getGASFormat()}, {self.offset})"
+        return f"{self.offset}({self.var.getGASFormat()})"
       
 class LabelX64():
     def __init__(self, name):
@@ -148,7 +148,7 @@ end_call_stack:
         self.make_instruction("POP", Registerx64.RBX)
         self.make_instruction("POP", Registerx64.RCX)
         self.make_instruction("XOR", Registerx64.RAX, Registerx64.RAX)
-        self.make_instruction("CMP", Registerx64.RBX, Registerx64.RCX)
+        self.make_instruction("CMP", Registerx64.RCX, Registerx64.RBX)
        
     
     def eq(self):
@@ -178,14 +178,17 @@ end_call_stack:
     def make_main(self):
         self.asm += "_start:\n"
         self.asm += "PUSH %R12\n"
-        self.asm += "ENTER $0x20, $0\n"
+        self.asm += "MOV %RSP, %RBP\n"
+        self.asm += "ADD $0x20, %RSP\n"
         self.asm += "LEA call_stack(%rip), %R12\n"
         
         self.callfunc("entry")
         
         self.asm += "LEAVE\n"
         self.asm += "POP %R12\n"
-        self.asm += "RET\n"
+        self.asm += "mov $60, %rax\n"
+        self.asm += "xor %rdi, %rdi\n"
+        self.asm += "syscall\n"
     
     def copy(self, i = 0, ct = 1):
         if i < 0:
@@ -266,11 +269,11 @@ end_call_stack:
         self.asm += f"func_{name}:\n"
         self.make_instruction("POP", Registerx64.RCX)
         self.make_instruction("MOV", PtrX64(Registerx64.R12), Registerx64.RCX)
-        self.make_instruction("ADD", PtrX64(Registerx64.R12), ImmediateX64(8))
+        self.make_instruction("ADD", Registerx64.R12, ImmediateX64(8))
          
        
     def endfunc(self):
-        self.make_instruction("SUB", PtrX64(Registerx64.R12), ImmediateX64(8))
+        self.make_instruction("SUB", Registerx64.R12, ImmediateX64(8))
         self.make_instruction("MOV", Registerx64.RCX, PtrX64(Registerx64.R12))
         self.make_instruction("PUSH", Registerx64.RCX)
         self.make_instruction("RET")
@@ -312,7 +315,7 @@ end_call_stack:
     def syscall(self, arg_ct):
         ArgOrder = [Registerx64.RAX, Registerx64.RDI, Registerx64.RSI, Registerx64.RDX, Registerx64.RCX, Registerx64.R8, Registerx64.R9]
         for i in range(arg_ct+1):
-            self.asm += self.make_instruction("POP", ArgOrder[i])
+            self.make_instruction("POP", ArgOrder[i])
         self.make_instruction("SYSCALL")
         
     def get_string(self, string):
@@ -338,6 +341,9 @@ end_call_stack:
         return res + '"'
     
     def debug_word(self, file_num, line_num, op_num, word):
+        # don't add debug info for function epilogue
+        if word[0] == '#':
+            return
         self.asm += f"// {word.encode('unicode_escape').decode('utf-8')}\n"
         self.asm += f".loc {file_num} {line_num} {op_num}\n"
         
@@ -345,11 +351,20 @@ end_call_stack:
         self.asm += f".file {num} \"{file}\"\n"
         
     def make_instruction(self, name, dest=None, src=None, size=None):
+        if not size is None:
+            suffixes = {1: "b", 2: "w", 4: "l", 8:"q"}
+            if not size in suffixes:
+                raise CodeException(f"Invalid size passed to make_instruction: {size}", self.it)
+            name += suffixes[size]
+        
         if dest is None:
-            return f"{name}\n"
-        if src is None:
-            return f"{name} {dest.getGASFormat()}\n"
-        return f"{name} {src.getGASFormat()}, {dest.getGASFormat()}\n"
+            inst = f"{name}\n"
+        elif src is None:
+            inst = f"{name} {dest.getGASFormat()}\n"
+        else:
+            inst = f"{name} {src.getGASFormat()}, {dest.getGASFormat()}\n"
+            
+        self.asm += inst
             
     
     def run(self):
@@ -361,7 +376,7 @@ end_call_stack:
 
 
 input_path = "test.stacksy"
-ouput_path = "test.asm"
+ouput_path = "test.s"
 
 it = iter(sys.argv[1:])
 for arg in it:
@@ -376,7 +391,7 @@ for arg in it:
     
 
 a = Compilerx64(input_path)
-#nasm -g -F dwarf -f elf64 test.asm && gcc test.o && ./a.out
+# gcc test.s -nostdlib && ./a.out
 a.run()
 
 with open(ouput_path, "w") as fp:
