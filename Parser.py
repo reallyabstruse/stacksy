@@ -150,20 +150,21 @@ class Parser:
             if word:
                 if word[0] == ";":
                     self.it.skip_line()
-                elif self.in_function:
-                    self.debug_word(self.it.get_file_num(), self.it.get_line_number(), self.it.get_op_number(), word)
-                    if word[0].isnumeric() or (word[0] == "-" and word[1:2].isnumeric()):
-                        self.push_int(int(word, 0))
-                    elif word[0] == '"' and word[-1] == '"':
-                        self.get_string(word[1:-1])
-                    elif word[0] == "'" and word[-1] == "'" and len(word) == 3:
-                        self.push_int(ord(word[1]))
-                    elif '"' in word:
-                        raise CodeException("Unexpected \" character", self.it)
-                    else:
-                        self.op(word.lower().split(":"))
                 else:
-                    self.op_outside(word.lower().split(":"))
+                    self.debug_word(self.it.get_file_num(), self.it.get_line_number(), self.it.get_op_number(), word)
+                    if self.in_function:
+                        if word[0].isnumeric() or (word[0] == "-" and word[1:2].isnumeric()):
+                            self.push_int(int(word, 0))
+                        elif word[0] == '"' and word[-1] == '"':
+                            self.get_string(word[1:-1])
+                        elif word[0] == "'" and word[-1] == "'" and len(word) == 3:
+                            self.push_int(ord(word[1]))
+                        elif '"' in word:
+                            raise CodeException("Unexpected \" character", self.it)
+                        else:
+                            self.op(word.lower().split(":"))
+                    else:
+                        self.op_outside(word.lower().split(":"))
 
             
         for f in self.functions_called:

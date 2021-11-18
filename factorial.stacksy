@@ -1,0 +1,17 @@
+import:std.stacksy
+
+#fac
+    1 1
+    while copy:2 copy:1 >= do
+        copy swap:2 * swap
+        1 +
+    elihw
+    pop swap pop
+#
+
+#entry
+    1 while copy 20 < do
+        copy fac printint "\n" print
+        1 +
+    elihw
+#

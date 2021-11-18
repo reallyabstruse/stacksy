@@ -1,0 +1,1 @@
+/usr/bin/c++    -rdynamic CMakeFiles/debugger.dir/debugger.cpp.o CMakeFiles/debugger.dir/debuggerview.cpp.o  -o debugger  -Wl,-rpath,/home/sindre/stacksy_main/debugger/libelfin-fbreg/dwarf:/home/sindre/stacksy_main/debugger/libelfin-fbreg/elf libelfin-fbreg/dwarf/libdwarf++.so libelfin-fbreg/elf/libelf++.so -lpanel -lncurses 

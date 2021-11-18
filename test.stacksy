@@ -3,6 +3,8 @@ import:std.stacksy
 
 
 #entry
-	123 printint
-	456 printint
+	"blah" print
+	"blah" print
+	1 printint "blah" print
+	4 printint
 #

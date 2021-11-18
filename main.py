@@ -93,9 +93,8 @@ class Compilerx64(Parser):
 .section .data
 
 .section .bss
-.lcomm call_stack 4000
-end_call_stack:
-
+.lcomm call_stack, 4000
+.lcomm call_stack_end, 0
 .section .text
 
    
@@ -112,6 +111,8 @@ end_call_stack:
         self.if_label_ct = 0
         
         self.has_else = []
+        
+        self.in_prologue = False
         
 
     def add(self):
@@ -239,7 +240,7 @@ end_call_stack:
     def memalloc(self, name, size):
         self.asm += ".section .bss\n"
         self.asm += f".lcomm {name}, {size}\n"
-        self.asm += f"{name}_end:\n"
+        self.asm += f".lcomm {name}_end, 0\n"
         self.asm += ".section .text\n"
         
     def push_memory_address(self, name):
@@ -341,11 +342,21 @@ end_call_stack:
         return res + '"'
     
     def debug_word(self, file_num, line_num, op_num, word):
+        # outside of functions only add debug info for function declarations
+        if not self.in_function:
+            if word[0] != '#':
+                return
         # don't add debug info for function epilogue
-        if word[0] == '#':
+        elif word[0] == '#':
             return
+        
+        prologue_end = "prologue_end" if self.in_prologue else ""
+        
+        # if function declaration then next instuction marks end of prologue
+        self.in_prologue = word[0] == '#'
+            
         self.asm += f"// {word.encode('unicode_escape').decode('utf-8')}\n"
-        self.asm += f".loc {file_num} {line_num} {op_num}\n"
+        self.asm += f".loc {file_num} {line_num} {op_num} {prologue_end}\n"
         
     def debug_add_file(self, num, file):
         self.asm += f".file {num} \"{file}\"\n"

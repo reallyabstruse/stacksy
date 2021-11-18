@@ -1,7 +1,7 @@
 #!/bin/bash
 compile_and_run() {
 	rm -f $1.{asm,o,out}
-	python3 ../main.py -i "$1.stacksy" -o "$1.asm" && nasm -f elf64 "$1.asm" && gcc "$1.o" -o "$1.out" && "./$1.out"
+	python3 ../main.py -i "$1.stacksy" -o "$1.s" &&  gcc "$1.s" -nostdlib && ./a.out
 }
 
 want_create=false
