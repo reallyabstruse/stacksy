@@ -7,11 +7,16 @@
 #include <sys/ptrace.h>
 #include <cstring>
 
+#include "debuginfo.hpp"
+
 using namespace std;
 
 class Breakpoint {
 	public:
-		Breakpoint(pid_t pid, intptr_t addr) {
+		Breakpoint(const Breakpoint&) = delete;
+		Breakpoint &operator=(const Breakpoint&) = delete;
+	
+		Breakpoint(pid_t pid, intptr_t addr, const LineEntry* le = NULL) : mLineEntry(le) {
 			mPid = pid;
 			mAddr = addr;
 			mEnabled = false;
@@ -37,7 +42,23 @@ class Breakpoint {
 			mEnabled = false;
 		}
 		
-		bool isEnabled() {
+		bool isIn(unsigned file, unsigned line = 0, unsigned column = 0) const {
+			if (mLineEntry == nullptr) {
+				return false;
+			}
+			
+			if (mLineEntry->fileIndex != file) {
+				return false;
+			}
+			
+			if (line && mLineEntry->line != line) {
+				return false;
+			}
+			
+			return !column || mLineEntry->column == column;
+		}
+		
+		bool isEnabled() const {
 			return mEnabled;
 		}
 		
@@ -60,10 +81,11 @@ class Breakpoint {
 			}
 		}
 	
-		const unsigned char int3 = 0xCC;
+		const static unsigned char int3 = 0xCC;
 	
 		bool mEnabled;
 		unsigned char mOldVal;
 		intptr_t mAddr;
 		pid_t mPid;
+		const LineEntry* mLineEntry;
 };

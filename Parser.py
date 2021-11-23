@@ -16,6 +16,7 @@ class Parser:
         self.functions_called = set()
         self.memory_segments = set()
         self.memory_segments_used = set()
+        self.const_labels = {}
         self.strings = {}
 
     def memint(self, string):
@@ -35,7 +36,7 @@ class Parser:
             if len(o) != 1:
                 raise CodeException("Invalid : in function declaration", self.it)
             name = o[0][1:]
-            if name in self.functions or name in self.memory_segments:
+            if name in self.functions:
                 raise CodeException("Identifier already used", self.it)
             self.in_function = name
             self.funcdef(name)
@@ -45,11 +46,20 @@ class Parser:
                 raise CodeException("Invalid memory allocation", self.it)
                 
             name = o[0][1:]
-            if name in self.functions or name in self.memory_segments:
+            if name in self.memory_segments:
                 raise CodeException("Identifier already used", self.it)
                 
             self.memalloc(name, self.memint(o[1]))
             self.memory_segments.add(name)
+        elif o[0][0] == "$":
+            if len(o) != 2:
+                raise CodeException("Invalid memory allocation", self.it)
+                
+            name = o[0][1:]
+            if name in self.const_labels:
+                raise CodeException(f"Redefenition of constant {name}", self.it)
+
+            self.declare_const(name, o[1])
         elif o[0] == "import":
             if len(o) != 2:
                 raise CodeException("Invalid import", self.it)
@@ -123,6 +133,8 @@ class Parser:
             self.push(self.le())
         elif o[0] == ">=":
             self.push(self.ge())
+        elif o[0] == "or":
+            self.push(self._or())
         elif o[0] == "pop":
             self.pop()     
         elif o[0] == "while":
@@ -142,6 +154,11 @@ class Parser:
             self.in_function = False  
         elif o[0][0] == "@":
             self.push_memory_address(o[0][1:])
+        elif o[0][0] == "$":
+            name = o[0][1:]
+            if not name in self.const_labels:
+                raise CodeException(f"Undeclared const {name}", self.it)
+            self.push_const(o[0][1:])
         else:
             self.callfunc(o[0])
             

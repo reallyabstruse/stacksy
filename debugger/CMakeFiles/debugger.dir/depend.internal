@@ -3,6 +3,7 @@
 
 CMakeFiles/debugger.dir/debugger.cpp.o
  /home/sindre/stacksy_main/debugger/breakpoint.hpp
+ /home/sindre/stacksy_main/debugger/debugeepipe.hpp
  /home/sindre/stacksy_main/debugger/debugger.cpp
  /home/sindre/stacksy_main/debugger/debugger.hpp
  /home/sindre/stacksy_main/debugger/debuggerview.hpp
@@ -15,6 +16,7 @@ CMakeFiles/debugger.dir/debugger.cpp.o
  /home/sindre/stacksy_main/debugger/linenoise/linenoise.h
 CMakeFiles/debugger.dir/debuggerview.cpp.o
  /home/sindre/stacksy_main/debugger/breakpoint.hpp
+ /home/sindre/stacksy_main/debugger/debugeepipe.hpp
  /home/sindre/stacksy_main/debugger/debugger.hpp
  /home/sindre/stacksy_main/debugger/debuggerview.cpp
  /home/sindre/stacksy_main/debugger/debuggerview.hpp

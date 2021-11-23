@@ -18,17 +18,17 @@ using namespace std;
 
 class DebuggerException : public exception {
 	public:
-		DebuggerException(const char *msg) {
+		DebuggerException(string msg) {
 			cerr << msg;
 			mMsg = msg;
 		}
 		
 		const char *what() {
-			return mMsg;
+			return mMsg.c_str();
 		}
 		
 	private:
-		const char *mMsg;
+		string mMsg;
 };
 
 struct LineEntry {
@@ -65,6 +65,20 @@ class DebugInfo {
 			return it->second + mLoadAddress;
 		}
 		
+		intptr_t getFunctionPrologueEndAddress(const string &name) {
+			auto itFunc = mFunctionAddresses.find("func_" + name);
+			if (itFunc == mFunctionAddresses.end() || !itFunc->second) {
+				throw DebuggerException("Could not find function " + name);
+			}
+
+			auto itLineEntry = mLineEntries.upper_bound(itFunc->second);
+			if (itLineEntry == mLineEntries.end()) {
+				throw DebuggerException("Could not find end of prologue for function " + name);
+			}
+			
+			return itLineEntry->first + mLoadAddress;
+		}
+		
 		const string &getFunctionName(intptr_t addr) {		
 			auto it = mFunctionNames.find(addr - mLoadAddress);
 			if (it == mFunctionNames.end()) {
@@ -75,8 +89,12 @@ class DebugInfo {
 			return it->second;
 		}
 		
-		intptr_t getAddressFromLineCol(uint32_t line, uint32_t column) {
-			auto it = mLineAddresses.find(getLineColumnHash(line, column));
+		bool isFunctionEntry(intptr_t addr) {		
+			return mFunctionNames.count(addr - mLoadAddress);
+		}
+		
+		intptr_t getAddressFromLineCol(uint32_t line, uint16_t column, uint16_t file) {
+			auto it = mLineAddresses.find(getLineColumnHash(line, column, file));
 			if (it == mLineAddresses.end()) {
 				return 0;
 			}
@@ -92,6 +110,10 @@ class DebugInfo {
 			
 			return &it->second;
 		}	
+		
+		LineEntry* getLineEntry(unsigned file, unsigned line, unsigned column) {
+			return getLineEntry(getAddressFromLineCol(line, column, file));
+		}
 
 		bool isDynamic() {
 			return mDynamic;
@@ -136,12 +158,38 @@ class DebugInfo {
 			}
 			return false;
 		}
-	
-
-	//private:
-		uint64_t getLineColumnHash(uint32_t line, uint32_t column) {
-				return (uint64_t)line << 32 | column;
+		
+		uint64_t getLineColumnHash(uint32_t line, uint16_t column, uint16_t file) {
+				return ((uint64_t)line << 32) | ((uint32_t)column << 16) | file;
 		}
+	
+	
+		unsigned getFileFromAddress(intptr_t addr) {
+			auto le = getLineEntry(addr);
+			
+			if (le == nullptr) {
+				throw DebuggerException("No file found for current addr: " + to_string(addr));
+			}
+			
+			return le->fileIndex;
+		}
+		
+		unsigned getFileFromName(string name) {
+			if (name[0] != '/') {
+				name = "/" + name;
+			}
+			
+			for (unsigned i = 0; i < mFilePaths.size(); i++) {
+				if (mFilePaths[i].ends_with(name)) {
+					return i;
+				}
+			}
+			
+			throw DebuggerException("No such file: " + name);
+		}
+
+	private:
+		
 		
 		void loadFunctionAddresses(elf::elf e) {
 			for (auto &sec : e.sections()) {
@@ -172,7 +220,7 @@ class DebugInfo {
 					}
 					
 					mLineEntries[lineEntry.address] = {lineEntry.line, lineEntry.column, fileIndex, lineEntry.prologue_end};
-					mLineAddresses[getLineColumnHash(lineEntry.line, lineEntry.column)] = lineEntry.address;
+					mLineAddresses[getLineColumnHash(lineEntry.line, lineEntry.column, fileIndex)] = lineEntry.address;
 				}
 				
 				for (unsigned i = 1; i <= maxIndex; i++) {  
@@ -187,7 +235,7 @@ class DebugInfo {
 		// Map from address to function name
 		unordered_map<intptr_t, string> mFunctionNames;
 		
-		// Map from getLineColumnHash(line, col) to address
+		// Map from getLineColumnHash(line, col, file) to address
 		unordered_map<uint64_t, intptr_t> mLineAddresses;
 		// Map from address to LineEntry
 		map<intptr_t, LineEntry> mLineEntries;

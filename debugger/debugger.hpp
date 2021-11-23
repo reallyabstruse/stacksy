@@ -31,13 +31,19 @@ class StacksyDebugger {
 	
 		void continueExecution();
 		
-		void addBreakpoint(uint64_t addr);
+		void addBreakpoint(uint64_t addr, LineEntry *le = nullptr);
+		void addBreakpoint(unsigned line, unsigned column, unsigned fileNum);
 		
 		void removeBreakpoint(uint64_t addr);
 		
 		bool hasBreakpoint(uint64_t addr);
+		bool hasBreakpoint(unsigned file, unsigned line = 0, unsigned column = 0);
+		
 		void writeMemory(uint64_t addr, uint64_t val);
 		
+		// Try to read value from addr, sett errno on fail
+		uint64_t tryReadMemory(uint64_t addr);
+		// Read value from addr, throw on fail
 		uint64_t readMemory(uint64_t addr);
 	
 		uint64_t readRegister(X64Register reg);
@@ -56,6 +62,9 @@ class StacksyDebugger {
 		
 		void stepLine();
 		
+		virtual void outputError(string err);
+		
+		virtual void outputMessage(string msg);
 		
 		const vector<vector<string>> &getSource(string path);
 	protected:
@@ -79,4 +88,8 @@ class StacksyDebugger {
 		void getRegisters();
 		void wait();
 		void handleSigtrap(siginfo_t info);
+		
+		// Call waitpid and return when debugee breaks. Returns waitpid status
+		virtual int waitForDebugee();
+		
 };

@@ -1,10 +1,46 @@
 import:std.stacksy
+@buffer:100
 
+; param: fd
+; ret: int, currrent file offset
+#file_pos
+	$SEEK_CUR 0 swap:2 sys_lseek
+#
 
+; param: fd
+; ret: int, size of file
+; does not affect file offset
+#file_size
+	copy file_pos ; fd pos
+	
+	$SEEK_END 0 copy:3 sys_lseek ; fd pos size
+	
+	swap:2 ; size pos fd
+	
+	$SEEK_SET swap:2 swap ; size $SEEK_SET pos fd
+	sys_lseek pop ; size
+#
+
+#openfile
+	$O_RDONLY 0 "./test.stacksy\0" 8 + $AT_FDCWD sys_openat
+#
+
+; size-8 buffer buffer+8 file
+#readfile
+	8 - swap
+	copy 8 + swap:2
+	swap:3 swap:2:3
+    sys_read
+	set:8
+#
+
+#malloc
+	-1 $MAP_PRIVATE $MAP_ANONYMOUS or $PROT_READ $PROT_WRITE or 0 swap:4 0 sys_mmap
+#
 
 #entry
-	"blah" print
-	"blah" print
-	1 printint "blah" print
-	4 printint
+	 openfile 
+	 file_size malloc
+	 copy 100 readfile copy puts
 #
+

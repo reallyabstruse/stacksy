@@ -114,10 +114,15 @@ class Compilerx64(Parser):
         
         self.in_prologue = False
         
+        
+    def _or(self):
+        self.pop(2)
+        self.make_instruction("OR", Registerx64.RAX, Registerx64.RBX)
 
     def add(self):
         self.pop(2)
         self.make_instruction("ADD", Registerx64.RAX, Registerx64.RBX)
+        
         
     def sub(self):
         self.pop(2)
@@ -243,10 +248,16 @@ class Compilerx64(Parser):
         self.asm += f".lcomm {name}_end, 0\n"
         self.asm += ".section .text\n"
         
+    def declare_const(self, name, val):
+        self.const_labels[name] = ImmediateX64(val)
+        
     def push_memory_address(self, name):
         self.memory_segments_used.add(name)
         self.make_instruction("LEA", Registerx64.RAX, LabelX64(name))
         self.push(Registerx64.RAX)
+        
+    def push_const(self, name):
+        self.push(self.const_labels[name])
         
     def mem_write(self, size):
         self.make_instruction("POP", Registerx64.RAX)
@@ -314,10 +325,13 @@ class Compilerx64(Parser):
         self.make_instruction("MOV", PtrX64(Registerx64.RSP, j*8), Registerx64.RAX)
     
     def syscall(self, arg_ct):
-        ArgOrder = [Registerx64.RAX, Registerx64.RDI, Registerx64.RSI, Registerx64.RDX, Registerx64.RCX, Registerx64.R8, Registerx64.R9]
+        ArgOrder = [Registerx64.RAX, Registerx64.RDI, Registerx64.RSI, Registerx64.RDX, Registerx64.R10, Registerx64.R8, Registerx64.R9]
+        if arg_ct >= len(ArgOrder):
+            raise CodeException("Too many args for syscall", self)
         for i in range(arg_ct+1):
             self.make_instruction("POP", ArgOrder[i])
         self.make_instruction("SYSCALL")
+        self.make_instruction("PUSH", Registerx64.RAX);
         
     def get_string(self, string):
         if not string in self.strings:
