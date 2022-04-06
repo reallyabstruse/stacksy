@@ -1,6 +1,8 @@
 # stacksy
 Stacksy is a stack based programming language with white space seperated operators.
 
+main.py is used to compile stacksy code to GAS x86-64 assembly code for linux. GNU assemblercan be used to create a binary.
+
 Square brackets [] indicate optional arguments.
 (Top) represents the value on top of the stack. (Top-N) represents the value N steps down from the top of the stack.
 
