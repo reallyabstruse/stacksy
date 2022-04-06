@@ -1,0 +1,13 @@
+A debugger for compiled stacksy programs
+
+Usage debugger filepath
+
+commands:
+* b functionname  or break functionname -- add breakpoint to start of function
+* b line [col] or break line [col] -- add a breakpoint to linenumber line and optionally column number col
+* s or step -- step one line forward
+* sc or stepc -- step one column (stacksy instruction)
+* n or next -- step over to next line
+* nc or nextc -- step over to next column (stacksy instruction)
+* c or cont or continue -- continue running program until next breakpoint or program ends
+* fin or finish -- step out
