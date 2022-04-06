@@ -13,7 +13,7 @@ class Parser:
         self.stack = []
         self.in_function = False
         self.functions = {}
-        self.functions_called = set()
+        self.functions_called = {} # dict of functionname => string where called from
         self.memory_segments = set()
         self.memory_segments_used = set()
         self.const_labels = {}
@@ -190,4 +190,4 @@ class Parser:
             
         for f in self.functions_called:
             if not f in self.functions:
-                raise CodeException(f"Undeclared function {f}", self.it)
+                raise CodeException(f"Undeclared function {f}", self.functions_called[f])

@@ -148,7 +148,7 @@ class CodeIterator:
     
     def __str__(self):
         if not self.paths:
-            return ""
+            return "Unknown location"
         return f"{self.paths[-1]}:{self.line_nums[-1]}:{self.op_nums[-1]-1}"
     
     def __iter__(self):

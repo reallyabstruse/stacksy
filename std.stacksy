@@ -382,6 +382,12 @@ $PROT_GROWSUP:0x02000000
     $STDOUT sys_write pop
 #
 
+; str n
+#printn
+	swap $STDOUT sys_write pop
+#
+
+
 ; cstr
 #strlen
 	copy 

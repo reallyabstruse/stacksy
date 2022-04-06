@@ -207,7 +207,7 @@ class Compilerx64(Parser):
         self.asm += "xor %rdi, %rdi\n"
         self.asm += "syscall\n"
         
-        self.functions_called.add("entry")
+        self.functions_called["entry"] = "main"
     
     def copy(self, i = 0, ct = 1):
         if i < 0:
@@ -315,7 +315,7 @@ class Compilerx64(Parser):
     def callfunc(self, name):
         self.make_instruction("CALL", LabelX64("func", name))
         
-        self.functions_called.add(name)
+        self.functions_called[name] = str(self.it)
         
         
     def push(self, val = None, *vals):
@@ -500,7 +500,10 @@ for arg in it:
 
 a = Compilerx64(input_path)
 # gcc test.s -nostdlib && ./a.out
-a.run()
+try:
+    a.run()
+except CodeException as e:
+    print(e)
 
 with open(ouput_path, "w") as fp:
     fp.write(a.asm)
