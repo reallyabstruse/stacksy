@@ -15,7 +15,7 @@ Comments are indicated by the ; character. The rest of the line is then ignored
 A function can contain the following literals:
 * integers (example 1, -100) -- push the number to top of stack
 * character surrounded by ' (example 'c') -- push the ascii value of the character to top of stack
-* string surrounded by " (example "string"), standard c escaping is supported (example "\n\"\0") -- push the pointer to string to top of stack. A string contains a 64bit size followed by the bytes of the string
+* string surrounded by " (example "string"), standard c escaping is supported (example `"\n\"\0"`) -- push the pointer to string to top of stack. A string contains a 64bit size followed by the bytes of the string
 
 A function can contain the following operations:
 * `+ - * / %` -- pops the top two values from stack, perform the given operation and push the result on stack
