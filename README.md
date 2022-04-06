@@ -18,9 +18,9 @@ A function can contain the following literals:
 * string surrounded by " (example "string"), standard c escaping is supported (example "\n\"\0") -- push the pointer to string to top of stack. A string contains a 64bit size followed by the bytes of the string
 
 A function can contain the following operations:
-* + - * / % -- pops the top two values from stack, perform the given operation and push the result on stack
+* `+ - * / %` -- pops the top two values from stack, perform the given operation and push the result on stack
 * divmod -- pops the top two values from stack, push the result of dividing the values and the result of mod on the values
-* = != < > <= >= -- pops the top two values from stack, push the result of comparing the values with the given operator. 1 if true, 0 oif false.
+* `= != < > <= >=` -- pops the top two values from stack, push the result of comparing the values with the given operator. 1 if true, 0 oif false.
 * or -- pops the top two values from stack, push the result of a binary or operation on them
 * & -- pops the top two values from stack, push the result of a binary and operation on them
 * pop -- remove top value from stack
