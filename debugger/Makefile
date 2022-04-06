@@ -190,6 +190,60 @@ debuggerview.cpp.s:
 	$(MAKE) -f CMakeFiles/debugger.dir/build.make CMakeFiles/debugger.dir/debuggerview.cpp.s
 .PHONY : debuggerview.cpp.s
 
+debuginfo.o: debuginfo.cpp.o
+
+.PHONY : debuginfo.o
+
+# target to build an object file
+debuginfo.cpp.o:
+	$(MAKE) -f CMakeFiles/debugger.dir/build.make CMakeFiles/debugger.dir/debuginfo.cpp.o
+.PHONY : debuginfo.cpp.o
+
+debuginfo.i: debuginfo.cpp.i
+
+.PHONY : debuginfo.i
+
+# target to preprocess a source file
+debuginfo.cpp.i:
+	$(MAKE) -f CMakeFiles/debugger.dir/build.make CMakeFiles/debugger.dir/debuginfo.cpp.i
+.PHONY : debuginfo.cpp.i
+
+debuginfo.s: debuginfo.cpp.s
+
+.PHONY : debuginfo.s
+
+# target to generate assembly for a file
+debuginfo.cpp.s:
+	$(MAKE) -f CMakeFiles/debugger.dir/build.make CMakeFiles/debugger.dir/debuginfo.cpp.s
+.PHONY : debuginfo.cpp.s
+
+ncursesHelpers.o: ncursesHelpers.cpp.o
+
+.PHONY : ncursesHelpers.o
+
+# target to build an object file
+ncursesHelpers.cpp.o:
+	$(MAKE) -f CMakeFiles/debugger.dir/build.make CMakeFiles/debugger.dir/ncursesHelpers.cpp.o
+.PHONY : ncursesHelpers.cpp.o
+
+ncursesHelpers.i: ncursesHelpers.cpp.i
+
+.PHONY : ncursesHelpers.i
+
+# target to preprocess a source file
+ncursesHelpers.cpp.i:
+	$(MAKE) -f CMakeFiles/debugger.dir/build.make CMakeFiles/debugger.dir/ncursesHelpers.cpp.i
+.PHONY : ncursesHelpers.cpp.i
+
+ncursesHelpers.s: ncursesHelpers.cpp.s
+
+.PHONY : ncursesHelpers.s
+
+# target to generate assembly for a file
+ncursesHelpers.cpp.s:
+	$(MAKE) -f CMakeFiles/debugger.dir/build.make CMakeFiles/debugger.dir/ncursesHelpers.cpp.s
+.PHONY : ncursesHelpers.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -206,6 +260,12 @@ help:
 	@echo "... debuggerview.o"
 	@echo "... debuggerview.i"
 	@echo "... debuggerview.s"
+	@echo "... debuginfo.o"
+	@echo "... debuginfo.i"
+	@echo "... debuginfo.s"
+	@echo "... ncursesHelpers.o"
+	@echo "... ncursesHelpers.i"
+	@echo "... ncursesHelpers.s"
 .PHONY : help
 
 

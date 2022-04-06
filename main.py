@@ -12,6 +12,8 @@ from CodeIterator import CodeException
 
 from Parser import Parser
 
+from StacksyFunction import StacksyFunctionX64
+
        
 class Registerx64(IntEnum):
     RAX = 0
@@ -34,6 +36,8 @@ class Registerx64(IntEnum):
     AL = 16
     AX = 17
     EAX = 18
+    
+    RIP = 19
     
     def getGASFormat(self):
         return f"%{self.name}"
@@ -63,11 +67,14 @@ class PtrX64():
         return f"{self.offset}({self.var.getGASFormat()})"
       
 class LabelX64():
-    def __init__(self, name):
+    def __init__(self, name, extra=None):
         self.name = name
+        if not extra is None:
+            self.name += f"_{extra}"
         
     def getGASFormat(self):
-        return f"{self.name}(%rip)"
+        return f"{self.name}"
+    
       
 class Valx64:
     REGISTER = 1
@@ -84,9 +91,11 @@ class Valx64:
 
 class Compilerx64(Parser): 
     def __init__(self, path):
-        super().__init__(path)
+        super().__init__(path, StacksyFunctionX64)
         
         self.intsize = 8
+        
+        self.compile_unit = None
 
         self.asm = """.global _start
 
@@ -102,8 +111,6 @@ class Compilerx64(Parser):
 """
 
         self.debug_add_file(self.it.get_file_num(), path)
-
-        self.make_main()
         
         self.while_labels = []
         self.while_label_ct = 0
@@ -118,6 +125,10 @@ class Compilerx64(Parser):
     def _or(self):
         self.pop(2)
         self.make_instruction("OR", Registerx64.RAX, Registerx64.RBX)
+    
+    def band(self):
+        self.pop(2)
+        self.make_instruction("AND", Registerx64.RAX, Registerx64.RBX)
 
     def add(self):
         self.pop(2)
@@ -188,13 +199,15 @@ class Compilerx64(Parser):
         self.asm += "ADD $0x20, %RSP\n"
         self.asm += "LEA call_stack(%rip), %R12\n"
         
-        self.callfunc("entry")
+        self.asm += "CALL func_entry\n"
         
         self.asm += "LEAVE\n"
         self.asm += "POP %R12\n"
         self.asm += "mov $60, %rax\n"
         self.asm += "xor %rdi, %rdi\n"
         self.asm += "syscall\n"
+        
+        self.functions_called.add("entry")
     
     def copy(self, i = 0, ct = 1):
         if i < 0:
@@ -207,16 +220,16 @@ class Compilerx64(Parser):
     def _while(self):
         self.while_labels.append(self.while_label_ct)
         self.while_label_ct += 1
-        self.asm += f"\nwhile_{self.while_labels[-1]}:\n"
+        self.define_label(LabelX64("while", self.while_labels[-1]))
         
     def do(self):
         self.pop(1)
         self.make_instruction("CMP", Registerx64.RAX, ImmediateX64(0))
-        self.asm += f"JE endwhile_{self.while_labels[-1]}\n"
+        self.make_instruction("JE", LabelX64("endwhile", self.while_labels[-1]))
             
     def endwhile(self):
-        self.asm += f"JMP while_{self.while_labels[-1]}\n"
-        self.asm += f"\nendwhile_{self.while_labels[-1]}:\n"
+        self.make_instruction("JMP", LabelX64("while", self.while_labels[-1]))
+        self.define_label(LabelX64("endwhile", self.while_labels[-1]))
         self.while_labels.pop()
         
     def _if(self):
@@ -226,19 +239,19 @@ class Compilerx64(Parser):
         self.has_else.append(False)
         
         self.make_instruction("CMP", Registerx64.RAX, ImmediateX64(0))
-        self.asm += f"JE endif_{self.if_labels[-1]}\n"
+        self.make_instruction("JE", LabelX64("endif", self.if_labels[-1]))
         
             
     def _else(self):
-        self.asm += f"JMP endelse_{self.if_labels[-1]}\n"
-        self.asm += f"\nendif_{self.if_labels[-1]}:\n"
+        self.make_instruction("JMP", LabelX64("endelse", self.if_labels[-1]))
+        self.define_label(LabelX64("endif", self.if_labels[-1]))
         self.has_else[-1] = True
     
     def endif(self):
         if self.has_else.pop():
-            self.asm += f"\nendelse_{self.if_labels[-1]}:\n"
+            self.define_label(LabelX64("endelse", self.if_labels[-1]))
         else:
-            self.asm += f"\nendif_{self.if_labels[-1]}:\n"
+            self.define_label(LabelX64("endif", self.if_labels[-1]))
             
         self.if_labels.pop()
             
@@ -253,7 +266,7 @@ class Compilerx64(Parser):
         
     def push_memory_address(self, name):
         self.memory_segments_used.add(name)
-        self.make_instruction("LEA", Registerx64.RAX, LabelX64(name))
+        self.make_instruction("LEA", Registerx64.RAX, LabelX64(name), Registerx64.RIP)
         self.push(Registerx64.RAX)
         
     def push_const(self, name):
@@ -278,20 +291,29 @@ class Compilerx64(Parser):
         self.push(Registerx64.RAX)
        
     def funcdef(self, name):
-        self.asm += f"func_{name}:\n"
+        if not self.compile_unit is None:
+            raise CodeException("Compile unit should be none when opening function", self.it)
+        self.compile_unit = self.functions[name]
+    
         self.make_instruction("POP", Registerx64.RCX)
         self.make_instruction("MOV", PtrX64(Registerx64.R12), Registerx64.RCX)
         self.make_instruction("ADD", Registerx64.R12, ImmediateX64(8))
          
        
     def endfunc(self):
+        if self.compile_unit is None:
+            raise CodeException("Compile unit should not be none when closing function", self.it)
+    
         self.make_instruction("SUB", Registerx64.R12, ImmediateX64(8))
         self.make_instruction("MOV", Registerx64.RCX, PtrX64(Registerx64.R12))
         self.make_instruction("PUSH", Registerx64.RCX)
         self.make_instruction("RET")
         
+        self.compile_unit = None
+        
+        
     def callfunc(self, name):
-        self.asm += f"CALL func_{name}\n"
+        self.make_instruction("CALL", LabelX64("func", name))
         
         self.functions_called.add(name)
         
@@ -337,10 +359,46 @@ class Compilerx64(Parser):
         if not string in self.strings:
             self.strings[string] = f"string_{len(self.strings)}"
             
-        self.make_instruction("LEA", Registerx64.RAX, LabelX64(self.strings[string]))
+        self.make_instruction("LEA", Registerx64.RAX, LabelX64(self.strings[string]), Registerx64.RIP)
         
         self.push(Registerx64.RAX)
         
+    def get_char(self, string):
+        if len(string) == 0:
+            raise CodeException("Empty char literal", self.it)
+            
+        if string[0] == '\\':
+            if len(string) < 2:
+                raise CodeException("Invalid char literal", self.it)
+            if string[1].isdigit():
+                if len(string) > 4:
+                    raise CodeException("Invalid char literal", self.it)
+                try:
+                    return int(string[1:], base=8)
+                except ValueError:
+                    raise CodeException("Invalid char literal", self.it)
+                    
+            elif len(string) > 2:
+                raise CodeException("Invalid char literal", self.it)
+            elif string[1] == 'n':
+                return ord('\n')
+            elif string[1] == 'r':
+                return ord('\r')
+            elif string[1] == 't':
+                return ord('\t')
+            elif string[1] == '\\':
+                return ord('\\')
+            elif string[1] == '\'':
+                return ord('\'')
+            else:
+                raise CodeException("Unknown escape sequence in char literal", self.it)
+                
+        if len(string) > 1:
+            raise CodeException("Invalid char literal", self.it)
+         
+         
+        return ord(string)
+            
         
     def escape_gas_string(self, string):
         res = '"'
@@ -369,13 +427,13 @@ class Compilerx64(Parser):
         # if function declaration then next instuction marks end of prologue
         self.in_prologue = word[0] == '#'
             
-        self.asm += f"// {word.encode('unicode_escape').decode('utf-8')}\n"
-        self.asm += f".loc {file_num} {line_num} {op_num} {prologue_end}\n"
+        self.add_comment(word.encode('unicode_escape').decode('utf-8'))
+        self.append_asm(f".loc {file_num} {line_num} {op_num} {prologue_end}")
         
     def debug_add_file(self, num, file):
-        self.asm += f".file {num} \"{file}\"\n"
+        self.append_asm(f".file {num} \"{file}\"")
         
-    def make_instruction(self, name, dest=None, src=None, size=None):
+    def make_instruction(self, name, dest=None, src=None, ext=None, size=None):
         if not size is None:
             suffixes = {1: "b", 2: "w", 4: "l", 8:"q"}
             if not size in suffixes:
@@ -383,21 +441,46 @@ class Compilerx64(Parser):
             name += suffixes[size]
         
         if dest is None:
-            inst = f"{name}\n"
+            inst = f"{name}"
         elif src is None:
-            inst = f"{name} {dest.getGASFormat()}\n"
+            if ext is None:
+                inst = f"{name} {dest.getGASFormat()}"
+            else:
+                inst = f"{name} {dest.getGASFormat()}({ext.getGASFormat()})"
         else:
-            inst = f"{name} {src.getGASFormat()}, {dest.getGASFormat()}\n"
+            if ext is None:
+                inst = f"{name} {src.getGASFormat()}, {dest.getGASFormat()}"
+            else:
+                inst = f"{name} {src.getGASFormat()}({ext.getGASFormat()}), {dest.getGASFormat()}"
             
-        self.asm += inst
+        self.compile_unit.append_asm(inst)
             
+    
+    def append_asm(self, asm):
+        if not self.compile_unit is None:
+            self.compile_unit.append_asm(asm)
+        else:
+            self.asm += asm + "\n"
+        
+    def define_label(self, label):
+        self.append_asm(f"{label.getGASFormat()}:")
+        
+    def add_comment(self, text):
+        self.append_asm(f"// {text}")
     
     def run(self):
         super().run()
-        self.asm += "\n.section .data\n"
+        self.append_asm(".section .data")
         for x in self.strings.items():
             s = self.escape_gas_string(x[0])
-            self.asm += f"{x[1]}: .quad {len(x[0])}\n{x[1]}_ptr: .ascii {s}\n"
+            self.append_asm(f"{x[1]}: .quad {len(x[0])}\n{x[1]}_ptr: .ascii {s}")
+           
+
+        self.append_asm(".section .text")
+        self.make_main()
+            
+        for name in self.functions_called:
+            self.append_asm(self.functions[name].get_asm())
 
 
 input_path = "test.stacksy"

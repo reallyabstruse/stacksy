@@ -6,6 +6,8 @@ set(CMAKE_DEPENDS_LANGUAGES
 set(CMAKE_DEPENDS_CHECK_CXX
   "/home/sindre/stacksy_main/debugger/debugger.cpp" "/home/sindre/stacksy_main/debugger/CMakeFiles/debugger.dir/debugger.cpp.o"
   "/home/sindre/stacksy_main/debugger/debuggerview.cpp" "/home/sindre/stacksy_main/debugger/CMakeFiles/debugger.dir/debuggerview.cpp.o"
+  "/home/sindre/stacksy_main/debugger/debuginfo.cpp" "/home/sindre/stacksy_main/debugger/CMakeFiles/debugger.dir/debuginfo.cpp.o"
+  "/home/sindre/stacksy_main/debugger/ncursesHelpers.cpp" "/home/sindre/stacksy_main/debugger/CMakeFiles/debugger.dir/ncursesHelpers.cpp.o"
   )
 set(CMAKE_CXX_COMPILER_ID "GNU")
 

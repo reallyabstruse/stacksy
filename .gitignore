@@ -35,8 +35,8 @@
 
 *.s
 
-__pycache__/**
-CMakeFiles/**
-libelfin-fbreg/**
-linenoise/**
-ncurses/**
+/__pycache__
+/debugger/CMakeFiles
+/debugger/libelfin-fbreg
+/debugger/linenoise
+/debugger/ncurses

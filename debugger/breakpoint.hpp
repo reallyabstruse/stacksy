@@ -68,16 +68,14 @@ class Breakpoint {
 			auto olddata = ptrace(PTRACE_PEEKDATA, mPid, mAddr, nullptr);
 			
 			if (errno != 0) {
-				cerr << "Could not peek data of process. " << strerror(errno);
-				return;
+				throw DebuggerException(string("Could not set breakpoint Err 1. ") + strerror(errno));
 			}
 			
 			mOldVal = olddata & 0xff;
 			auto newdata = (olddata & ~0xff) | newVal;
 			 
 			if (ptrace(PTRACE_POKEDATA, mPid, mAddr, newdata) == -1) {
-				cerr << "Could not poke data to process. " << strerror(errno);
-				return;
+				throw DebuggerException(string("Could not set breakpoint Err 2. ") + strerror(errno));
 			}
 		}
 	

@@ -4,7 +4,7 @@ project (stacksydebugger)
 add_compile_options(-std=c++2a)
 
 include_directories(libelfin-fbreg linenoise include)
-add_executable(debugger debugger.cpp debuggerview.cpp)
+add_executable(debugger debugger.cpp debuggerview.cpp debuginfo.cpp ncursesHelpers.cpp)
 
 set_target_properties(debugger
                       PROPERTIES COMPILE_FLAGS "-g -O0")

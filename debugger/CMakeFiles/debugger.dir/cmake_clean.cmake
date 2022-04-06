@@ -1,6 +1,8 @@
 file(REMOVE_RECURSE
   "CMakeFiles/debugger.dir/debugger.cpp.o"
   "CMakeFiles/debugger.dir/debuggerview.cpp.o"
+  "CMakeFiles/debugger.dir/debuginfo.cpp.o"
+  "CMakeFiles/debugger.dir/ncursesHelpers.cpp.o"
   "debugger"
   "debugger.pdb"
 )

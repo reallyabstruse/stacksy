@@ -4,6 +4,9 @@
 #include "debugger.hpp"
 #include "debugeepipe.hpp"
 
+// For ctrl+keyconstant
+#define ctrl(x)           ((x) & 0x1f)
+
 enum ColorPairs {
 	CurLine = 1, CurCol
 };
@@ -16,16 +19,18 @@ class DebuggerNcursesView : StacksyDebugger {
 		
 		int run();
 		
+		void updateWindows();
+		
 		void handleCommand(string line);
 	
-		short getWordColor(string word);
+		short getWordColor(string word, unsigned column);
 		
 		bool probableString(uint64_t val, uint64_t nextVal);
 		string inspectVariable(intptr_t p);
 
 		void outputError(string err) override;
 		
-		void outputMessage(string msg) override;
+		void outputMessage(string msg, int color = 0) override;
 
 	protected:
 		int waitForDebugee() override;
@@ -36,9 +41,8 @@ class DebuggerNcursesView : StacksyDebugger {
 		void printSource(uint64_t addr);
 		void printOutput();
 		
-		string getInputString();
-		string getInputStringNonBlock();
-	
+		string getInputString(bool block = true);
+		
 		int mHighlightColor;
 		
 		WINDOW * mSrcWindow;
@@ -49,7 +53,7 @@ class DebuggerNcursesView : StacksyDebugger {
 		DebugeePipe &mDebugeePipe;
 		
 		// Text to display in output panel
-		vector<string> mOutput;
+		vector<pair<string, int>> mOutput;
 		
 		
 };

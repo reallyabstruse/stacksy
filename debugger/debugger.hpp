@@ -31,7 +31,7 @@ class StacksyDebugger {
 	
 		void continueExecution();
 		
-		void addBreakpoint(uint64_t addr, LineEntry *le = nullptr);
+		void addBreakpoint(uint64_t addr, const LineEntry *le = nullptr);
 		void addBreakpoint(unsigned line, unsigned column, unsigned fileNum);
 		
 		void removeBreakpoint(uint64_t addr);
@@ -45,10 +45,13 @@ class StacksyDebugger {
 		uint64_t tryReadMemory(uint64_t addr);
 		// Read value from addr, throw on fail
 		uint64_t readMemory(uint64_t addr);
+		// Read a cstring from memory, throw on fail
+		string readMemoryString(uint64_t addr, int size);
 	
 		uint64_t readRegister(X64Register reg);
 		
 		uint64_t getPc();
+		uint64_t getReturnAddress();
 		
 		void writeRegister(X64Register reg, uint64_t val);
 		
@@ -56,15 +59,15 @@ class StacksyDebugger {
 		
 		bool stepOverBreakpoint();
 		
-		void stepOut();
+		void stepOut(uint32_t ct = 1);
+		void stepOver(bool column = false, uint32_t ct = 1);
 		
-		void stepColumn();
-		
-		void stepLine();
+		// Step line or column
+		void step(bool column = false, uint32_t ct = 1);
 		
 		virtual void outputError(string err);
 		
-		virtual void outputMessage(string msg);
+		virtual void outputMessage(string msg, int = 0);
 		
 		const vector<vector<string>> &getSource(string path);
 	protected:
@@ -88,6 +91,8 @@ class StacksyDebugger {
 		void getRegisters();
 		void wait();
 		void handleSigtrap(siginfo_t info);
+		
+		const LineEntry *stepFrom(const LineEntry *lineInfo, bool column = false, uint64_t returnAddress = 0);
 		
 		// Call waitpid and return when debugee breaks. Returns waitpid status
 		virtual int waitForDebugee();

@@ -8,16 +8,18 @@ Created on Sun Nov  7 11:08:52 2021
 from CodeIterator import CodeIterator, CodeException
 
 class Parser:
-    def __init__(self, path):
+    def __init__(self, path, functionClass):
         self.it = CodeIterator(path)
         self.stack = []
         self.in_function = False
-        self.functions = set()
+        self.functions = {}
         self.functions_called = set()
         self.memory_segments = set()
         self.memory_segments_used = set()
         self.const_labels = {}
         self.strings = {}
+        
+        self.functionClass = functionClass
 
     def memint(self, string):
         if string[-1].lower() == "k":
@@ -39,8 +41,8 @@ class Parser:
             if name in self.functions:
                 raise CodeException("Identifier already used", self.it)
             self.in_function = name
+            self.functions[name] = self.functionClass(name)
             self.funcdef(name)
-            self.functions.add(name)
         elif o[0][0] == "@":
             if len(o) != 2:
                 raise CodeException("Invalid memory allocation", self.it)
@@ -135,6 +137,8 @@ class Parser:
             self.push(self.ge())
         elif o[0] == "or":
             self.push(self._or())
+        elif o[0] == "&":
+            self.push(self.band())
         elif o[0] == "pop":
             self.pop()     
         elif o[0] == "while":
@@ -168,14 +172,14 @@ class Parser:
                 if word[0] == ";":
                     self.it.skip_line()
                 else:
-                    self.debug_word(self.it.get_file_num(), self.it.get_line_number(), self.it.get_op_number(), word)
                     if self.in_function:
+                        self.debug_word(self.it.get_file_num(), self.it.get_line_number(), self.it.get_op_number(), word)
                         if word[0].isnumeric() or (word[0] == "-" and word[1:2].isnumeric()):
                             self.push_int(int(word, 0))
                         elif word[0] == '"' and word[-1] == '"':
                             self.get_string(word[1:-1])
-                        elif word[0] == "'" and word[-1] == "'" and len(word) == 3:
-                            self.push_int(ord(word[1]))
+                        elif word[0] == "'" and word[-1] == "'":
+                            self.push_int(self.get_char(word[1:-1]))
                         elif '"' in word:
                             raise CodeException("Unexpected \" character", self.it)
                         else:

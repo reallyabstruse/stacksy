@@ -35,7 +35,6 @@ class CodeIterator:
             
     def add_import(self, path):
         if path in self.all_imported_paths:
-            print(path, "already imported")
             return
         
         self.all_imported_paths[path] = len(self.all_imported_paths) + 1
@@ -90,12 +89,13 @@ class CodeIterator:
             self.line_indices[-1] += 1
            
         if self.line_indices[-1] < N:
-            if self.lines[-1][self.line_indices[-1]] == '"':
-                res += '"'
+            delim = self.lines[-1][self.line_indices[-1]]
+            if delim == '"' or delim == "'":
+                res += delim
                 self.line_indices[-1] += 1
                 found_end = False
                 while self.line_indices[-1] < N:
-                    c = self.read_string_character('"')
+                    c = self.read_string_character(delim)
                     if not c:
                         found_end = True
                         break
@@ -104,7 +104,7 @@ class CodeIterator:
                 if not found_end:
                     raise CodeException("Expected \" to terminate string", self)
                 
-                res += '"'   
+                res += delim 
             else:
                 while self.line_indices[-1] < len(self.lines[-1]) and not (c := self.lines[-1][self.line_indices[-1]]).isspace():
                     res += c

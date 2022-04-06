@@ -51,13 +51,21 @@ void StacksyDebugger::continueExecution() {
 	wait();
 }
 		
-void StacksyDebugger::addBreakpoint(uint64_t addr, LineEntry *le/* = nullptr*/) {
+void StacksyDebugger::addBreakpoint(uint64_t addr, const LineEntry *le/* = nullptr*/) {
+	if (le == nullptr) {
+		le = mDebugInfo.getLineEntry(addr);
+	}
 	Breakpoint &bp = mBreakpoints.try_emplace(addr, mPid, addr, le).first->second;
 	bp.enable();
 }
 
 void StacksyDebugger::addBreakpoint(unsigned line, unsigned column, unsigned fileNum) {
-	addBreakpoint(mDebugInfo.getAddressFromLineCol(line, column, fileNum), mDebugInfo.getLineEntry(fileNum, line, column));
+	intptr_t addr = mDebugInfo.getAddressFromLineCol(line, column, fileNum);
+	if (addr == 0) {
+		throw(DebuggerException("No address linked to " + mDebugInfo.lineColToString(line, column, fileNum)));
+	}
+	
+	addBreakpoint(addr, mDebugInfo.getLineEntry(fileNum, line, column));
 }
 		
 void StacksyDebugger::removeBreakpoint(uint64_t addr) {
@@ -100,6 +108,36 @@ uint64_t StacksyDebugger::readMemory(uint64_t addr) {
 	}
 	
 	return res;
+}
+
+string StacksyDebugger::readMemoryString(uint64_t addr, int size) {
+	stringstream res;
+	
+	res << '"';
+	
+	while (size > 0) {
+		uint64_t val = readMemory(addr);
+		unsigned N = min(size, QWORD_SIZE);
+		
+		for (unsigned i = 0; i < N; i++) {
+			char c = (val >> (8 * i)) & 0xff;
+			if (c == '\n') {
+				res << "\\n";
+			} else if (c == '\r') {
+				res << "\\r";
+			} else if (c < 0x20 || c > 0x7f) {
+				res << "\\" << oct << c;
+			} else {
+				res << c;
+			}
+		}
+		
+		
+		size -= QWORD_SIZE;
+		addr += QWORD_SIZE;
+	}
+	res << '"';
+	return res.str();
 }
 	
 uint64_t StacksyDebugger::readRegister(X64Register reg) {
@@ -145,48 +183,59 @@ bool StacksyDebugger::stepOverBreakpoint() {
 	return false;
 }
 
+uint64_t StacksyDebugger::getReturnAddress() {
+	return readMemory(readRegister(X64Register::R12) - 8);
+}
 		
-void StacksyDebugger::stepOut() {
-	uint64_t returnAddress = readRegister(X64Register::R12) - 8;
-	if (!hasBreakpoint(returnAddress)) {
-		addBreakpoint(returnAddress);
-		continueExecution();
-		removeBreakpoint(returnAddress);
-	} else {
-		continueExecution();
+void StacksyDebugger::stepOut(uint32_t ct/* = 1*/) {
+	while (ct--) {
+		uint64_t returnAddress = getReturnAddress();
+		if (!hasBreakpoint(returnAddress)) {
+			addBreakpoint(returnAddress);
+			continueExecution();
+			removeBreakpoint(returnAddress);
+		} else {
+			continueExecution();
+		}
+	}
+}
+	
+		
+void StacksyDebugger::stepOver(bool column/* = false*/, uint32_t ct/* = 1*/) {
+	auto comparator = column ? DebugInfo::sameColumn : DebugInfo::sameLine;
+	
+	while (ct--) {
+		uint64_t returnAddress = getReturnAddress();
+		
+		const string curFuncName = mDebugInfo.getFunctionName(mPc);
+		const LineEntry *lineInfo = mDebugInfo.getLineEntry(mPc);
+		do {
+			stepFrom(lineInfo, column, returnAddress);
+			while (mRunning && mPc != returnAddress && !mDebugInfo.isAddressInFunction(mPc, curFuncName)) {
+				stepOut();
+			}
+		} while(mRunning && mPc != returnAddress && comparator(lineInfo, mDebugInfo.getLineEntry(mPc)));
 	}
 }
 		
-void StacksyDebugger::stepColumn() {
-	LineEntry *lineInfo = nullptr,
-			  *newLineInfo = mDebugInfo.getLineEntry(mPc);
-			  
-	uint64_t newAddr;
 	
-	do {
-		if (newLineInfo) {
-			lineInfo = newLineInfo;
-		}
-		stepX64Instruction();
-		newAddr = mPc;
-		newLineInfo = mDebugInfo.getLineEntry(newAddr);
-	} while (DebugInfo::sameColumn(lineInfo, newLineInfo) || mDebugInfo.isFunctionEntry(newAddr));
+void StacksyDebugger::step(bool column/* = false*/, uint32_t ct/* = 1*/) {		  
+	const LineEntry *lineInfo = mDebugInfo.getLineEntry(mPc);
+	while (ct--) {
+		lineInfo = stepFrom(lineInfo, column);
+	}
 }
-		
-void StacksyDebugger::stepLine() {
-	LineEntry *lineInfo = nullptr,
-			  *newLineInfo = mDebugInfo.getLineEntry(mPc);
+
+const LineEntry * StacksyDebugger::stepFrom(const LineEntry *lineInfo, bool column/* = false*/, uint64_t returnAddress/* = 0*/) {
+	const LineEntry *newLineInfo = nullptr;
 			  
-	uint64_t newAddr;
-	
+	auto comparator = column ? DebugInfo::sameColumn : DebugInfo::sameLine;
 	do {
-		if (newLineInfo) {
-			lineInfo = newLineInfo;
-		}
 		stepX64Instruction();
-		newAddr = mPc;
-		newLineInfo = mDebugInfo.getLineEntry(newAddr);
-	} while (DebugInfo::sameLine(lineInfo, newLineInfo) || mDebugInfo.isFunctionEntry(newAddr));
+		newLineInfo = mDebugInfo.getLineEntry(mPc);
+	} while (mRunning && mPc != returnAddress && comparator(lineInfo, newLineInfo));
+	
+	return newLineInfo;
 }
 		
 		
@@ -226,9 +275,28 @@ const vector<vector<string>> &StacksyDebugger::getSource(string path) {
 			} else if ((c == ' ') == inWhitespace) {
 				curWord.push_back(c);
 			} else {
-				curLine.push_back(curWord);
-				curWord = string(1, c);
-				inWhitespace = !inWhitespace;
+				if (c == '"' || c == '\'') {
+					if (inWhitespace) {
+						curLine.push_back(curWord);
+						curWord = string(1, c);
+					}
+					inWhitespace = false;
+					
+					char c2;
+					while (file.get(c2).good()) {
+						curWord.push_back(c2);
+						if (c2 == c) {
+							break;
+						} else if (c2 == '\\' && file.get(c2).good()) {
+							curWord.push_back(c2);
+						}
+					}
+				} else {
+					curLine.push_back(curWord);
+					curWord = string(1, c);
+					
+					inWhitespace = !inWhitespace;
+				}
 			}
 		}
 	}
@@ -280,13 +348,18 @@ void StacksyDebugger::wait() {
 	int status = waitForDebugee();
 	
 	if (__WIFEXITED(status)) {
+		outputMessage("Process exited normally");
 		mRunning = false;
+		return;
 	} else {
 		getRegisters();
 	}
 	
 	siginfo_t info;
-    ptrace(PTRACE_GETSIGINFO, mPid, nullptr, &info);
+    if (ptrace(PTRACE_GETSIGINFO, mPid, nullptr, &info) == -1) {
+		outputError(strerror(errno));
+		return;
+	}
 	
 	switch (info.si_signo) {
 		case SIGTRAP:
@@ -294,11 +367,14 @@ void StacksyDebugger::wait() {
 			break;
 		case SIGSEGV:
 			mPc = getPc();
-			outputError(string("Yay, segfault. Reason: ") + to_string(info.si_code) + " at " + to_string(uint64_t(info.si_addr)));
+			outputError("Segfault:" + to_string(info.si_code) + " at " + to_string(uint64_t(info.si_addr)));
+			break;
+		case 0:
+			outputMessage("Program exited normally");
 			break;
 		default:
 			mPc = getPc();
-			outputError(string("Got signal ") + to_string(info.si_signo) + " " + strsignal(info.si_signo));
+			outputError("Got signal " + to_string(info.si_signo) + " " + strsignal(info.si_signo));
     }
 
 }
@@ -307,7 +383,7 @@ void StacksyDebugger::outputError(string err) {
 	cerr << err << endl;
 }
 		
-void StacksyDebugger::outputMessage(string msg) {
+void StacksyDebugger::outputMessage(string msg, int) {
 	cout << msg << endl;
 }
 
@@ -335,9 +411,10 @@ int main(int argc, char *argv[]) {
 		 return -1;
 	} else {
 		dPipe.parentInit();
-		DebuggerNcursesView sd(path, pid, dPipe);
-
 		try {
+			DebuggerNcursesView sd(path, pid, dPipe);
+
+		
 			
 			sd.run();
 		} catch (DebuggerException &de) {
@@ -345,7 +422,13 @@ int main(int argc, char *argv[]) {
 			cerr << "exception" << de.what() << endl;
 		} catch(...) {
 			endwin();
-			cerr << "other err" << endl;
+			std::exception_ptr p = std::current_exception();
+			if (p) {
+				cerr << p.__cxa_exception_type()->name();
+			}
+			else {
+				cerr<< "unknown exception";
+			}
 		} 
 
 		
